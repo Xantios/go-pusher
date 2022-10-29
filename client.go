@@ -16,7 +16,7 @@ const ErrEvent = "ErrEvent"
 
 // Client is a pusher client
 type Client struct {
-	ws                 *websocket.Conn
+	Ws                 *websocket.Conn
 	Events             chan *Event
 	Stop               chan bool
 	Errors             chan error
@@ -36,7 +36,7 @@ func (c *Client) sendError(err error) {
 // heartbeat send a ping frame to server each - TODO reconnect on disconnect
 func (c *Client) heartbeat() {
 	for !c.Stopped() {
-		if err := websocket.Message.Send(c.ws, `{"event":"pusher:ping","data":"{}"}`); err != nil {
+		if err := websocket.Message.Send(c.Ws, `{"event":"pusher:ping","data":"{}"}`); err != nil {
 			c.sendError(err)
 		}
 		time.Sleep(HEARTBEAT_RATE * time.Second)
@@ -47,10 +47,10 @@ func (c *Client) heartbeat() {
 func (c *Client) listen() {
 	for !c.Stopped() {
 		var event Event
-		err := websocket.JSON.Receive(c.ws, &event)
+		err := websocket.JSON.Receive(c.Ws, &event)
 		if err != nil {
 			if c.Stopped() {
-				// Normal termination (ws Receive returns error when ws is
+				// Normal termination (Ws Receive returns error when Ws is
 				// closed by other goroutine)
 				c.sendError(fmt.Errorf("Listen error and c stopped : %s", err))
 				return
@@ -74,7 +74,7 @@ func (c *Client) listen() {
 		}
 		switch event.Event {
 		case "pusher:ping":
-			websocket.Message.Send(c.ws, `{"event":"pusher:pong","data":"{}"}`)
+			websocket.Message.Send(c.Ws, `{"event":"pusher:pong","data":"{}"}`)
 		case "pusher:pong":
 		case "pusher:error":
 			c.sendError(fmt.Errorf("Event error received : %s", event.Data))
@@ -97,7 +97,7 @@ func (c *Client) Subscribe(channel string) (err error) {
 		err = fmt.Errorf("Channel %s already subscribed", channel)
 		return
 	}
-	err = websocket.Message.Send(c.ws, fmt.Sprintf(`{"event":"pusher:subscribe","data":{"channel":"%s"}}`, channel))
+	err = websocket.Message.Send(c.Ws, fmt.Sprintf(`{"event":"pusher:subscribe","data":{"channel":"%s"}}`, channel))
 	if err != nil {
 		return
 	}
@@ -112,7 +112,7 @@ func (c *Client) Unsubscribe(channel string) (err error) {
 		err = fmt.Errorf("Client isn't subscrived to %s", channel)
 		return
 	}
-	err = websocket.Message.Send(c.ws, fmt.Sprintf(`{"event":"pusher:unsubscribe","data":{"channel":"%s"}}`, channel))
+	err = websocket.Message.Send(c.Ws, fmt.Sprintf(`{"event":"pusher:unsubscribe","data":{"channel":"%s"}}`, channel))
 	if err != nil {
 		return
 	}
@@ -160,7 +160,7 @@ func (c *Client) Stopped() bool {
 func (c *Client) Close() error {
 	// Closing the Stop channel "broadcasts" the stop signal.
 	close(c.Stop)
-	return c.ws.Close()
+	return c.Ws.Close()
 }
 
 // NewCustomClient return a custom client
@@ -172,7 +172,7 @@ func NewCustomClient(appKey, host, scheme string) (*Client, error) {
 	sChannels := new(subscribedChannels)
 	sChannels.channels = make([]string, 0)
 	pClient := Client{
-		ws:                 ws,
+		Ws:                 ws,
 		Events:             make(chan *Event, EVENT_CHANNEL_BUFF_SIZE),
 		Stop:               make(chan bool),
 		Errors:             make(chan error),
@@ -217,5 +217,5 @@ func NewWSS(appKey, host, scheme string) (ws *websocket.Conn, err error) {
 
 // NewClient initialize & return a Pusher client
 func NewClient(appKey string) (*Client, error) {
-	return NewCustomClient(appKey, "ws.pusherapp.com:443", "wss")
+	return NewCustomClient(appKey, "Ws.pusherapp.com:443", "wss")
 }
