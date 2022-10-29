@@ -39,7 +39,7 @@ func (c *Client) heartbeat() {
 		if err := websocket.Message.Send(c.Ws, `{"event":"pusher:ping","data":"{}"}`); err != nil {
 			c.sendError(err)
 		}
-		time.Sleep(HEARTBEAT_RATE * time.Second)
+		time.Sleep(HeartbeatRate * time.Second)
 	}
 }
 
@@ -132,7 +132,7 @@ func (c *Client) Bind(evt string) (dataChannel chan *Event, err error) {
 		return
 	}
 	// New data channel
-	dataChannel = make(chan *Event, EVENT_CHANNEL_BUFF_SIZE)
+	dataChannel = make(chan *Event, EventChannelBuffSize)
 	c.m.Lock()
 	c.binders[evt] = dataChannel
 	c.m.Unlock()
@@ -173,7 +173,7 @@ func NewCustomClient(appKey, host, scheme string) (*Client, error) {
 	sChannels.channels = make([]string, 0)
 	pClient := Client{
 		Ws:                 ws,
-		Events:             make(chan *Event, EVENT_CHANNEL_BUFF_SIZE),
+		Events:             make(chan *Event, EventChannelBuffSize),
 		Stop:               make(chan bool),
 		Errors:             make(chan error),
 		subscribedChannels: sChannels,
@@ -186,7 +186,7 @@ func NewCustomClient(appKey, host, scheme string) (*Client, error) {
 // NewWSS return a websocket connexion
 func NewWSS(appKey, host, scheme string) (ws *websocket.Conn, err error) {
 	origin := "http://localhost/"
-	url := scheme + "://" + host + "/app/" + appKey + "?protocol=" + PROTOCOL_VERSION
+	url := scheme + "://" + host + "/app/" + appKey + "?protocol=" + ProtocolVersion
 	ws, err = websocket.Dial(url, "", origin)
 	if err != nil {
 		return nil, err
